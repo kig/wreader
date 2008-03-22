@@ -109,10 +109,12 @@ module WReader
     end
 
     def to_png(png_filename, page=0, size=1024)
-      unless File.exist?(png_filename)
-        require 'thumbnailer'
-        Thumbnailer.thumbnail(pdf, png_filename, size, page-1)
-      end
+      require 'thumbnailer'
+      require 'fileutils'
+      tmp_file = "/tmp/page_images_#{ENV['USER']}/#{Process.pid}-#{Time.now.to_f}.png"
+      FileUtils.mkdir_p("/tmp/page_images_#{ENV['USER']}")
+      Thumbnailer.thumbnail(pdf, png_filename, size, page-1)
+      FileUtils.mv(tmp_file, png_filename)
       png_filename
     end
 

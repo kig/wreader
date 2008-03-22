@@ -27,8 +27,16 @@
 # page=page_num (4)
 # size=long_side_in_px (1024)
 
+use_print_profile = true
+times = []
+times << ['begin', Time.now.to_f]
+
 require 'cgi'
 require 'time'
+require 'wreader/reader'
+require 'wreader/utils'
+
+times << ['loaded libs', Time.now.to_f]
 
 cgi = CGI.new('html3')
 
@@ -40,20 +48,6 @@ if ENV['HTTP_IF_MODIFIED_SINCE']
   exit
 end
 
-def page_png(pdf, size, page)
-  page_fn = pdf+"-page-#{page}-#{size}.png"
-  unless File.exist?(page_fn)
-    require 'rubygems'
-    require 'thumbnailer'
-    require 'fileutils'
-    tmp_file = "/tmp/page_images_#{ENV['USER']}/#{Process.pid}-#{Time.now.to_f}.png"
-    FileUtils.mkdir_p("/tmp/page_images_#{ENV['USER']}")
-    Thumbnailer.thumbnail(pdf, tmp_file, size, page-1)
-    FileUtils.mv(tmp_file, page_fn)
-  end
-  page_fn
-end
-
 
 item = cgi['item'].to_s
 page = [cgi['page'].to_s.to_i, 1].max
@@ -63,6 +57,7 @@ type = cgi['type'].to_s.downcase
 
 filename = item
 if File.exist?(filename) and File.file?(filename)
+  times << ['verified filename', Time.now.to_f]
   if File.extname(filename).downcase == '.pdf'
     pdf = filename
   elsif File.exist?(filename+"-temp.pdf")
@@ -75,24 +70,32 @@ if File.exist?(filename) and File.file?(filename)
       unless File.exist?(page_fn)
         system("pdftohtml -f #{page} -l #{page} -noframes -enc UTF-8 -p -stdout #{pdf} > #{page_fn}")
       end
+      type = "text/html"
     when 'txt'
       page_fn = pdf+"-page-#{page}.txt"
       unless File.exist?(page_fn)
         system("pdftotext -f #{page} -l #{page} -enc UTF-8 -nopgbrk #{pdf} - > #{page_fn}")
       end
+      type = "text/plain"
     else
-      page_fn = page_png(pdf, size, page)
+      reader = WReader::Reader.new(pdf, nil)
+      page_fn = pdf+"-page-#{page}-#{size}.png"
+      reader.to_png(page_fn, size, page) unless File.exist?(page_fn)
       pid = fork {
-        page_png(pdf, size, page+1) rescue nil
-        page_png(pdf, size, page-1) rescue nil
+        page_fn = pdf+"-page-#{page+1}-#{size}.png"
+        reader.to_png(page_fn, size, page+1) unless File.exist?(page_fn)
+        page_fn = pdf+"-page-#{page-1}-#{size}.png"
+        reader.to_png(page_fn, size, page-1) unless File.exist?(page_fn)
         exit!(0)
       }
       Process.detach(pid)
+      type = "image/png"
     end
+    times << ["created file #{page_fn}", Time.now.to_f]
     if File.exist?(page_fn)
       ok_page = true
       head = cgi.header(
-        "type" => "image/png",
+        "type" => type,
         "length" => File.size(page_fn),
         "status" => "OK",
         "expires" => Time.now + (86400 * 365),
@@ -101,14 +104,11 @@ if File.exist?(filename) and File.file?(filename)
       )
       cgi.print(head)
       cgi.print(File.read(page_fn))
+      times << ["wrote out #{page_fn}", Time.now.to_f]
     end
   end
 end
-if !ok_page
-  cgi.out{
-    cgi.html{ cgi.body{
-      cgi.h2{ "ERROR ERROR" } +
-      cgi.p { "item = #{pdf}<br>page = #{page}<br>page_fn = #{page_fn}" }
-    } }
-  }
-end
+WReader.error(cgi, "Failed to create page") if !ok_page
+
+WReader.print_profile(times) if use_print_profile
+
