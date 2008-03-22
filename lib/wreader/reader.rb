@@ -7,8 +7,8 @@ module WReader
     attr_reader :metadata, :filename, :db
 
     def initialize(filename, database)
-      @db = database
       @filename = filename
+      @db = database
     end
 
     def dims(size=1024)
@@ -75,29 +75,26 @@ module WReader
         ), filename, page)
         return text[0] if text
       end
-      text = begin
-        if File.extname(filename).downcase == '.pdf'
-          pdf = filename
-        elsif File.exist?(filename+"-temp.pdf")
-          pdf = filename+"-temp.pdf"
-        end
-        `pdftotext -f #{page} -l #{page} -enc UTF-8 -nopgbrk #{pdf} - `.
-          gsub("æ", 'ae').
-          gsub("Æ", 'AE').
-          gsub("œ", "ce").
-          gsub("Œ", "CE").
-          gsub("ŋ", "ng").
-          gsub("Ŋ", "NG").
-          gsub("ʩ", "fng").
-          gsub("ﬀ", "ff").
-          gsub("ﬁ", "fi").
-          gsub("ﬂ", "fl").
-          gsub("ﬃ", "ffi").
-          gsub("ﬄ", "ffl").
-          gsub("ﬅ", "ft").
-          gsub("ﬆ", "st")
-      rescue
-        ""
+      pdf = pdf_filename
+      if pdf
+        text =
+          `pdftotext -f #{page} -l #{page} -enc UTF-8 -nopgbrk #{pdf.dump} - `.
+            gsub("æ", 'ae').
+            gsub("Æ", 'AE').
+            gsub("œ", "ce").
+            gsub("Œ", "CE").
+            gsub("ŋ", "ng").
+            gsub("Ŋ", "NG").
+            gsub("ʩ", "fng").
+            gsub("ﬀ", "ff").
+            gsub("ﬁ", "fi").
+            gsub("ﬂ", "fl").
+            gsub("ﬃ", "ffi").
+            gsub("ﬄ", "ffl").
+            gsub("ﬅ", "ft").
+            gsub("ﬆ", "st")
+      else
+        text = ""
       end
       if db
         db.execute(
@@ -108,12 +105,23 @@ module WReader
       text
     end
 
-    def to_png(png_filename, page=0, size=1024)
-      require 'thumbnailer'
+    def pdf_filename
+      if File.extname(filename).downcase == '.pdf'
+        pdf = filename
+      elsif File.exist?(filename+"-temp.pdf")
+        pdf = filename+"-temp.pdf"
+      end
+      pdf
+    end
+
+    def to_png(png_filename, size=1024, page=1)
       require 'fileutils'
       tmp_file = "/tmp/page_images_#{ENV['USER']}/#{Process.pid}-#{Time.now.to_f}.png"
       FileUtils.mkdir_p("/tmp/page_images_#{ENV['USER']}")
-      Thumbnailer.thumbnail(pdf, png_filename, size, page-1)
+      system("thumbnailer",
+        "-i", "application/pdf", "-k",
+        "-s", size.to_s, "-p", (page-1).to_s,
+        pdf_filename, tmp_file)
       FileUtils.mv(tmp_file, png_filename)
       png_filename
     end

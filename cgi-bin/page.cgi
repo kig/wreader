@@ -56,59 +56,59 @@ size = 1024 if size == 0
 type = cgi['type'].to_s.downcase
 
 filename = item
-if File.exist?(filename) and File.file?(filename)
-  times << ['verified filename', Time.now.to_f]
-  if File.extname(filename).downcase == '.pdf'
-    pdf = filename
-  elsif File.exist?(filename+"-temp.pdf")
-    pdf = filename+"-temp.pdf"
-  end
-  if pdf
-    case type
-    when 'html'
-      page_fn = pdf+"-page-#{page}.html"
-      unless File.exist?(page_fn)
-        system("pdftohtml -f #{page} -l #{page} -noframes -enc UTF-8 -p -stdout #{pdf} > #{page_fn}")
-      end
-      type = "text/html"
-    when 'txt'
-      page_fn = pdf+"-page-#{page}.txt"
-      unless File.exist?(page_fn)
-        system("pdftotext -f #{page} -l #{page} -enc UTF-8 -nopgbrk #{pdf} - > #{page_fn}")
-      end
-      type = "text/plain"
-    else
-      reader = WReader::Reader.new(pdf, nil)
-      page_fn = pdf+"-page-#{page}-#{size}.png"
-      reader.to_png(page_fn, size, page) unless File.exist?(page_fn)
-      pid = fork {
-        page_fn = pdf+"-page-#{page+1}-#{size}.png"
-        reader.to_png(page_fn, size, page+1) unless File.exist?(page_fn)
-        page_fn = pdf+"-page-#{page-1}-#{size}.png"
-        reader.to_png(page_fn, size, page-1) unless File.exist?(page_fn)
-        exit!(0)
-      }
-      Process.detach(pid)
-      type = "image/png"
+good_filename = File.expand_path(filename).index(File.expand_path(".")) == 0
+WReader.error(cgi, "Bad filename.") unless good_filename
+WReader.error(cgi, "No such file.") unless File.exist?(filename) and File.file?(filename)
+
+times << ['verified filename', Time.now.to_f]
+reader = WReader::Reader.new(filename, nil)
+pdf = reader.pdf_filename
+
+if pdf
+  case type
+  when 'html'
+    page_fn = pdf+"-page-#{page}.html"
+    unless File.exist?(page_fn)
+      system("pdftohtml -f #{page} -l #{page} -noframes -enc UTF-8 -p -stdout #{pdf} > #{page_fn}")
     end
-    times << ["created file #{page_fn}", Time.now.to_f]
-    if File.exist?(page_fn)
-      ok_page = true
-      head = cgi.header(
-        "type" => type,
-        "length" => File.size(page_fn),
-        "status" => "OK",
-        "expires" => Time.now + (86400 * 365),
-        "Last-modified" => File.mtime(page_fn).httpdate,
-        "Cache-control" => "public, max-age=#{86400*365}"
-      )
-      cgi.print(head)
-      cgi.print(File.read(page_fn))
-      times << ["wrote out #{page_fn}", Time.now.to_f]
-    end
+    type = "text/html"
+  when 'txt'
+    data = reader.get_page_text(page)
+    type = "text/plain"
+  else
+    page_fn = pdf+"-page-#{page}-#{size}.png"
+    reader.to_png(page_fn, size, page) unless File.exist?(page_fn)
+    pid = fork {
+      page_fn = pdf+"-page-#{page+1}-#{size}.png"
+      reader.to_png(page_fn, size, page+1) unless File.exist?(page_fn)
+      page_fn = pdf+"-page-#{page-1}-#{size}.png"
+      reader.to_png(page_fn, size, page-1) unless File.exist?(page_fn)
+      exit!(0)
+    }
+    Process.detach(pid)
+    type = "image/png"
   end
+  times << ["created file #{page_fn}", Time.now.to_f]
+  if data or File.exist?(page_fn)
+    ok_page = true
+    head = cgi.header(
+      "type" => type,
+      "length" => data ? data.size : File.size(page_fn),
+      "status" => "OK",
+      "expires" => Time.now + (86400 * 365),
+      "Last-modified" => File.mtime(data ? pdf : page_fn).httpdate,
+      "Cache-control" => "public, max-age=#{86400*365}"
+    )
+    cgi.print(head)
+    cgi.print(data || File.read(page_fn))
+    times << ["wrote out #{page_fn}", Time.now.to_f]
+  else
+    WReader.error(cgi, "Failed to create page")
+  end
+else
+  WReader.error(cgi, "Couldn't find a matching PDF file.")
 end
-WReader.error(cgi, "Failed to create page") if !ok_page
+
 
 WReader.print_profile(times) if use_print_profile
 
