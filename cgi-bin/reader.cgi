@@ -170,6 +170,7 @@ def print_profile(times)
     STDERR.puts("#{interval_bar(prev, t[1])} #{t[0]}")
     prev = t[1]
   }
+  STDERR.puts("Total time: %.3fms" % [(times[-1][1] - times[0][1]) * 1000])
   STDERR.puts
 end
 
