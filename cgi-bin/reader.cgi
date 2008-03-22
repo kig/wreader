@@ -172,8 +172,8 @@ end
 
 filename = cgi['item'].to_s
 # FIXME handle softlinks
-filename = File.expand_path(filename)
-error(cgi, "Bad filename.") unless filename.index(File.expand_path(".")) == 0
+good_filename = File.expand_path(filename).index(File.expand_path(".")) == 0
+error(cgi, "Bad filename.") unless good_filename
 error(cgi, "No such file.") unless File.exist?(filename) and File.file?(filename)
 
 metadata = get_metadata(filename, db)
