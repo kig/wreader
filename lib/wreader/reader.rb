@@ -9,7 +9,6 @@ module WReader
     def initialize(filename, database)
       @db = database
       @filename = filename
-      @metadata = get_metadata
     end
 
     def dims(size=1024)
@@ -27,7 +26,8 @@ module WReader
 
     # return a metadata hash for the filename
     # loads/caches it from/to db if one given
-    def get_metadata
+    def metadata
+      return @metadata if @metadata
       md = nil
       if db
         json = db.get_first_row(%Q(
@@ -60,6 +60,7 @@ module WReader
           db.execute("COMMIT")
         end
       end
+      @metadata = md
       md
     end
 
@@ -105,6 +106,14 @@ module WReader
         )
       end
       text
+    end
+
+    def to_png(png_filename, page=0, size=1024)
+      unless File.exist?(png_filename)
+        require 'thumbnailer'
+        Thumbnailer.thumbnail(pdf, png_filename, size, page-1)
+      end
+      png_filename
     end
 
   end
