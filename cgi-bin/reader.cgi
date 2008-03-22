@@ -56,7 +56,7 @@ reader = WReader::Reader.new(filename, WReader::SQLite3.new("reader.db"))
 times << ['init WReader::Reader', Time.now.to_f]
 
 # FIXME handle softlinks
-WReader.assert_subdir(cgi, "pdfs", filename)
+WReader.assert_filename(cgi, filename)
 times << ['filename', Time.now.to_f]
 
 metadata = reader.metadata

@@ -1,6 +1,11 @@
 module WReader
 extend self
 
+  class << self
+    attr_accessor :document_dir
+  end
+  self.document_dir = "pdfs"
+
   def error(cgi, msg)
     cgi.out("status" => "SERVER_ERROR"){
       cgi.html{ cgi.body{
@@ -32,8 +37,10 @@ extend self
     "[#{("#"*([16, (ms*2).round].min)).rjust(16)}] %.3fms" % [ms]
   end
 
-  def assert_subdir(subdir, filename)
-    good_filename = File.expand_path(filename).index(File.expand_path(filename)) == 0
+  def assert_filename(cgi, filename)
+    file = File.expand_path(filename)
+    dir = File.expand_path(WReader.document_dir)
+    good_filename = file.index(dir) == 0
     WReader.error(cgi, "Bad filename.") unless good_filename
     WReader.error(cgi, "No such file.") unless File.exist?(filename) and File.file?(filename)
   end

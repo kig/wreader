@@ -53,7 +53,7 @@ path = cgi['item'].to_s
 type = cgi['type'].to_s
 page = cgi['page'].to_s.to_i
 
-WReader.assert_subdir(cgi, "pdfs", path)
+WReader.assert_filename(cgi, filename)
 item = path.to_pn
 
 # FIXME handle softlinks
