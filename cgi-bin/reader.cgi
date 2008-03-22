@@ -26,175 +26,18 @@
 # item=item_path (2007/10-10-Thu/foo.pdf)
 # page=page_num (4)
 
-# overwrite this with your own code
-def get_database
-  if File.exist?("reader.db")
-    db = SQLite3::Database.new( "reader.db" )
-  else
-    db = SQLite3::Database.new( "reader.db" )
-    db.execute(%Q(
-      CREATE TABLE metadata (
-        filename TEXT UNIQUE NOT NULL,
-        json TEXT
-      )
-    ))
-    db.execute(%Q(
-      CREATE TABLE page_texts (
-        filename TEXT NOT NULL,
-        page INTEGER NOT NULL,
-        content TEXT
-      )
-    ))
-    db.execute(%Q(CREATE INDEX page_texts_filename_idx ON page_texts(filename)))
-    db.execute(%Q(
-      CREATE UNIQUE INDEX page_texts_filename_page_idx
-      ON page_texts(filename, page);
-    ))
-  end
-  db
-end
-
-def dims(metadata, size=1024)
-  w = metadata['Image.Width']
-  h = metadata['Image.Height']
-  if w and h
-    larger = [w.to_f,h.to_f].max.to_f
-    wr = (w.to_f / larger) * size
-    hr = (h.to_f / larger) * size
-    %Q(width="#{wr.ceil}" height="#{hr.ceil}")
-  else
-    ""
-  end
-end
-
-# return a metadata hash for the filename
-# loads/caches it from/to db if one given
-def get_metadata(filename, db=nil)
-  md = nil
-  if db
-    json = db.get_first_row(%Q(
-      SELECT json FROM metadata WHERE filename = ?
-    ), filename)
-    md = JSON.parse(json[0]) if json
-  end
-  unless md
-    require 'metadata'
-    Metadata.no_text = !db # get full text now, store pages in DB
-    Metadata.guess_metadata = true
-    md = filename.to_pn.metadata
-    if db
-      text = md.delete('File.Content')
-      db.execute("BEGIN")
-      db.execute(
-        "INSERT INTO metadata (filename, json) VALUES (?, ?)",
-        filename,
-        md.to_json
-      )
-      if text
-        pages = text.split("\f") # split on page breaks
-        pages.each_with_index{|txt, i|
-          db.execute(
-            "INSERT INTO page_texts (filename, page, content) VALUES (?,?,?)",
-            filename, i+1, txt
-          )
-        }
-      end
-      db.execute("COMMIT")
-    end
-  end
-  md
-end
-
-def get_document_citations(filename, metadata, db=nil)
-  return [] # TODO
-end
-
-def get_page_text(filename, page, db=nil)
-  if db
-    text = db.get_first_row(%Q(
-      SELECT content FROM page_texts WHERE filename = ? AND page = ?
-    ), filename, page)
-    return text[0] if text
-  end
-  text = begin
-    if File.extname(filename).downcase == '.pdf'
-      pdf = filename
-    elsif File.exist?(filename+"-temp.pdf")
-      pdf = filename+"-temp.pdf"
-    end
-    `pdftotext -f #{page} -l #{page} -enc UTF-8 -nopgbrk #{pdf} - `.
-      gsub("æ", 'ae').
-      gsub("Æ", 'AE').
-      gsub("œ", "ce").
-      gsub("Œ", "CE").
-      gsub("ŋ", "ng").
-      gsub("Ŋ", "NG").
-      gsub("ʩ", "fng").
-      gsub("ﬀ", "ff").
-      gsub("ﬁ", "fi").
-      gsub("ﬂ", "fl").
-      gsub("ﬃ", "ffi").
-      gsub("ﬄ", "ffl").
-      gsub("ﬅ", "ft").
-      gsub("ﬆ", "st")
-  rescue
-    ""
-  end
-  if db
-    db.execute(
-      "INSERT INTO page_texts (filename, page, content) VALUES (?, ?, ?)",
-      filename, page, text
-    )
-  end
-  text
-end
-
-def error(cgi, msg)
-  cgi.out("status" => "SERVER_ERROR"){
-    cgi.html{ cgi.body{
-      cgi.h2{
-        "ERROR in
-         #{ CGI.escapeHTML cgi.script_name.to_s }
-         #{ CGI.escapeHTML cgi.query_string.to_s }"
-      } +
-      cgi.p { msg }
-    } }
-  }
-  exit
-end
-
-def print_profile(times)
-  return if times.empty?
-  prev = times[0][1]
-  times.each{|t|
-    STDERR.puts("#{interval_bar(prev, t[1])} #{t[0]}")
-    prev = t[1]
-  }
-  STDERR.puts("Total time: %.3fms" % [(times[-1][1] - times[0][1]) * 1000])
-  STDERR.puts
-end
-
-def interval_bar(a, b)
-  a ||= b
-  ms = (b - a) * 1000
-  "[#{("#"*([16, (ms*2).round].min)).rjust(16)}] %.3fms" % [ms]
-end
-
 use_print_profile = true
 times = []
 times << ['begin', Time.now.to_f]
 
-require 'sqlite3'
-require 'json'
+require 'wreader/reader'
+require 'wreader/utils'
 require 'cgi'
 require 'uri'
 
 times << ['loaded libs', Time.now.to_f]
 
 cgi = CGI.new('html3')
-
-db = get_database
-times << ['get_database', Time.now.to_f]
 
 unless cgi.has_key?('page')
   head = cgi.header(
@@ -206,24 +49,27 @@ unless cgi.has_key?('page')
 end
 
 filename = cgi['item'].to_s
+
+reader = WReader::Reader.new(filename, WReader::SQLite3.new("reader.db"))
+times << ['init WReader::Reader', Time.now.to_f]
+
 # FIXME handle softlinks
 good_filename = File.expand_path(filename).index(File.expand_path(".")) == 0
-error(cgi, "Bad filename.") unless good_filename
-error(cgi, "No such file.") unless File.exist?(filename) and File.file?(filename)
+WReader.error(cgi, "Bad filename.") unless good_filename
+WReader.error(cgi, "No such file.") unless File.exist?(filename) and File.file?(filename)
 times << ['filename', Time.now.to_f]
 
-metadata = get_metadata(filename, db)
+metadata = reader.metadata
 page = [cgi['page'].to_i, 1].max
-times << ['metadata', Time.now.to_f]
 
 pg = metadata['Doc.PageCount']
-error(cgi, "Failed to get page count of document.", filename, page) if pg.nil?
+WReader.error(cgi, "Failed to get page count of document.", filename, page) if pg.nil?
 pages = [1, pg.to_i].max
 
-page_text = get_page_text(filename, page, db)
+page_text = reader.get_page_text(page)
 times << ['page text', Time.now.to_f]
 
-cites = get_document_citations(filename, metadata, db)
+cites = reader.get_document_citations
 citation_links = cites.map{|c|
   if c['URL']
     cgi.a(c['URL']){ c['Title'] }
@@ -316,7 +162,7 @@ page_thumbs = %Q(
 )
 
 thumb_size = 128
-thumb_dims = dims(metadata, thumb_size)
+thumb_dims = reader.dims(thumb_size)
 thumb_text = %Q(
           #{
             pgu = "page.cgi?item=#{URI.escape(filename)}&size=#{thumb_size}&page="
@@ -573,6 +419,6 @@ cgi.print(head)
 cgi.print(content)
 times << ['done', Time.now.to_f]
 
-print_profile(times) if use_print_profile
+WReader.print_profile(times) if use_print_profile
 
 
