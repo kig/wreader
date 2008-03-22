@@ -26,6 +26,36 @@
 # item=item_path (2007/10-10-Thu/foo.pdf)
 # page=page_num (4)
 
+# overwrite this with your own code
+def get_database
+  require 'rubygems'
+  require 'sqlite3'
+  if File.exist?("reader.db")
+    db = SQLite3::Database.new( "reader.db" )
+  else
+    db = SQLite3::Database.new( "reader.db" )
+    db.execute(%Q(
+      CREATE TABLE metadata (
+        filename TEXT UNIQUE NOT NULL,
+        json TEXT
+      )
+    ))
+    db.execute(%Q(
+      CREATE TABLE page_texts (
+        filename TEXT NOT NULL,
+        page INTEGER NOT NULL,
+        content TEXT
+      )
+    ))
+    db.execute(%Q(CREATE INDEX page_texts_filename_idx ON page_texts(filename)))
+    db.execute(%Q(
+      CREATE UNIQUE INDEX page_texts_filename_page_idx
+      ON page_texts(filename, page);
+    ))
+  end
+  db
+end
+
 def dims(metadata, size=1024)
   w = metadata['Image.Width']
   h = metadata['Image.Height']
@@ -39,19 +69,45 @@ def dims(metadata, size=1024)
   end
 end
 
-def get_metadata(filename)
-  # return a metadata hash for the filename
-  # cache this somewhere (LIKE A DATA-BASE)
-  require 'metadata'
-  filename.to_pn.metadata
+# return a metadata hash for the filename
+# loads/caches it from/to db if one given
+def get_metadata(filename, db=nil)
+  md = nil
+  if db
+    require 'json'
+    json = db.get_first_row(%Q(
+      SELECT json FROM metadata WHERE filename = ?
+    ), filename)
+    md = JSON.parse(json[0]) if json
+  end
+  unless md
+    require 'metadata'
+    Metadata.no_text = true
+    Metadata.guess_metadata = true
+    md = filename.to_pn.metadata
+    if db
+      db.execute(
+        "INSERT INTO metadata (filename, json) VALUES (?, ?)",
+        filename,
+        md.to_json
+      )
+    end
+  end
+  md
 end
 
-def get_document_citations(filename, metadata)
-  return [] # FIXME ?
+def get_document_citations(filename, metadata, db=nil)
+  return [] # TODO
 end
 
-def get_page_text(filename, page)
-  begin
+def get_page_text(filename, page, db=nil)
+  if db
+    text = db.get_first_row(%Q(
+      SELECT content FROM page_texts WHERE filename = ? AND page = ?
+    ), filename, page)
+    return text[0] if text
+  end
+  text = begin
     if File.extname(filename).downcase == '.pdf'
       pdf = filename
     elsif File.exist?(filename+"-temp.pdf")
@@ -75,6 +131,13 @@ def get_page_text(filename, page)
   rescue
     ""
   end
+  if db
+    db.execute(
+      "INSERT INTO page_texts (filename, page, content) VALUES (?, ?, ?)",
+      filename, page, text
+    )
+  end
+  text
 end
 
 def error(cgi, msg)
@@ -94,7 +157,9 @@ end
 
 require 'cgi'
 require 'uri'
+
 cgi = CGI.new('html3')
+db = get_database
 
 unless cgi.has_key?('page')
   head = cgi.header(
@@ -111,16 +176,16 @@ filename = File.expand_path(filename)
 error(cgi, "Bad filename.") unless filename.index(File.expand_path(".")) == 0
 error(cgi, "No such file.") unless File.exist?(filename) and File.file?(filename)
 
-metadata = get_metadata(filename)
+metadata = get_metadata(filename, db)
 page = [cgi['page'].to_i, 1].max
 
 pg = metadata['Doc.PageCount']
 error(cgi, "Failed to get page count of document.", filename, page) if pg.nil?
 pages = [1, pg.to_i].max
 
-page_text = get_page_text(filename, page)
+page_text = get_page_text(filename, page, db)
 
-cites = get_document_citations(filename, metadata)
+cites = get_document_citations(filename, metadata, db)
 citation_links = cites.map{|c|
   if c['URL']
     cgi.a(c['URL']){ c['Title'] }
