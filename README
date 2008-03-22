@@ -1,0 +1,13 @@
+Installation
+------------
+
+Copy the contents of cgi-bin to your webserver's CGI directory.
+Hack in an upload system and metadata storage system, etc.
+
+
+Requirements
+------------
+
+Ruby 1.8
+Metadata - http://github.com/kig/metadata/tree/
+Thumbnailer - http://github.com/kig/thumbnailer/tree/
