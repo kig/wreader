@@ -32,4 +32,10 @@ extend self
     "[#{("#"*([16, (ms*2).round].min)).rjust(16)}] %.3fms" % [ms]
   end
 
+  def assert_subdir(subdir, filename)
+    good_filename = File.expand_path(filename).index(File.expand_path(filename)) == 0
+    WReader.error(cgi, "Bad filename.") unless good_filename
+    WReader.error(cgi, "No such file.") unless File.exist?(filename) and File.file?(filename)
+  end
+
 end

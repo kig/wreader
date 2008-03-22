@@ -42,8 +42,9 @@ end
 
 $KCODE = 'u'
 
-require 'cgi'
+require 'wreader/utils'
 require 'metadata'
+require 'cgi'
 require 'uri'
 
 cgi = CGI.new("html3")
@@ -52,6 +53,7 @@ path = cgi['item'].to_s
 type = cgi['type'].to_s
 page = cgi['page'].to_s.to_i
 
+WReader.assert_subdir(cgi, "pdfs", path)
 item = path.to_pn
 
 # FIXME handle softlinks

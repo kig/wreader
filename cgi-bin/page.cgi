@@ -56,9 +56,7 @@ size = 1024 if size == 0
 type = cgi['type'].to_s.downcase
 
 filename = item
-good_filename = File.expand_path(filename).index(File.expand_path(".")) == 0
-WReader.error(cgi, "Bad filename.") unless good_filename
-WReader.error(cgi, "No such file.") unless File.exist?(filename) and File.file?(filename)
+WReader.assert_subdir(cgi, "pdfs", filename)
 
 times << ['verified filename', Time.now.to_f]
 reader = WReader::Reader.new(filename, nil)
