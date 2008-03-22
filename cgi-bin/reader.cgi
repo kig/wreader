@@ -51,7 +51,7 @@ def get_document_citations(filename, metadata)
 end
 
 def get_page_text(filename, page)
-  page_text = begin
+  begin
     if File.extname(filename).downcase == '.pdf'
       pdf = filename
     elsif File.exist?(filename+"-temp.pdf")
@@ -78,14 +78,12 @@ def get_page_text(filename, page)
 end
 
 def error(cgi, msg)
-  cgi.out(500){
+  cgi.out("status" => "SERVER_ERROR"){
     cgi.html{ cgi.body{
       cgi.h2{
-        "ERROR in #{
-          CGI.escapeHTML cgi.script_name
-         } #{
-          CGI.escapeHTML cgi.query_string
-         }"
+        "ERROR in
+         #{ CGI.escapeHTML cgi.script_name.to_s }
+         #{ CGI.escapeHTML cgi.query_string.to_s }"
       } +
       cgi.p { msg }
     } }
@@ -109,13 +107,15 @@ end
 
 filename = cgi['item'].to_s
 # FIXME handle softlinks
-error("No such file.") unless File.exist?(filename) and File.file?(filename)
+filename = File.expand_path(filename)
+error(cgi, "Bad filename.") unless filename.index(File.expand_path(".")) == 0
+error(cgi, "No such file.") unless File.exist?(filename) and File.file?(filename)
 
 metadata = get_metadata(filename)
 page = [cgi['page'].to_i, 1].max
 
 pg = metadata['Doc.PageCount']
-error("Failed to get page count of document.", filename, page) if pg.nil?
+error(cgi, "Failed to get page count of document.", filename, page) if pg.nil?
 pages = [1, pg.to_i].max
 
 page_text = get_page_text(filename, page)
@@ -126,7 +126,7 @@ citation_links = cites.map{|c|
     cgi.a(c['URL']){ c['Title'] }
   else
     c['Title']
-  end + (c['Authors'].empty? ? "" : " - " + c['Authors'].join(", ") })
+  end + (c['Authors'].empty? ? "" : " - " + c['Authors'].join(", "))
 }
 
 uri_pre = "reader.cgi?item=#{URI.escape(filename)}&page="
@@ -212,7 +212,7 @@ page_thumbs = %Q(
 )
 
 thumb_size = 128
-thumb_dims = dims(item, thumb_size)
+thumb_dims = dims(metadata, thumb_size)
 thumb_text = %Q(
           #{
             pgu = "page.cgi?item=#{URI.escape(filename)}&size=#{thumb_size}&page="
@@ -244,8 +244,8 @@ citations = citation_links.empty? ? "" : %Q(
   </div>
 )
 
-md = item.metadata[0]
-metadata = %Q(
+
+item_metadata = %Q(
   <div id="metadata">
     <form>
       <div class="item_metadata">
@@ -451,7 +451,7 @@ content = cgi.html{
       short_pages_div +
       text +
       current_page +
-      metadata +
+      item_metadata +
       pages_div
     } +
     page_thumbs +
