@@ -28,8 +28,6 @@
 
 # overwrite this with your own code
 def get_database
-  require 'rubygems'
-  require 'sqlite3'
   if File.exist?("reader.db")
     db = SQLite3::Database.new( "reader.db" )
   else
@@ -74,7 +72,6 @@ end
 def get_metadata(filename, db=nil)
   md = nil
   if db
-    require 'json'
     json = db.get_first_row(%Q(
       SELECT json FROM metadata WHERE filename = ?
     ), filename)
@@ -82,15 +79,27 @@ def get_metadata(filename, db=nil)
   end
   unless md
     require 'metadata'
-    Metadata.no_text = true
+    Metadata.no_text = !db # get full text now, store pages in DB
     Metadata.guess_metadata = true
     md = filename.to_pn.metadata
     if db
+      text = md.delete('File.Content')
+      db.execute("BEGIN")
       db.execute(
         "INSERT INTO metadata (filename, json) VALUES (?, ?)",
         filename,
         md.to_json
       )
+      if text
+        pages = text.split("\f") # split on page breaks
+        pages.each_with_index{|txt, i|
+          db.execute(
+            "INSERT INTO page_texts (filename, page, content) VALUES (?,?,?)",
+            filename, i+1, txt
+          )
+        }
+      end
+      db.execute("COMMIT")
     end
   end
   md
@@ -154,12 +163,37 @@ def error(cgi, msg)
   exit
 end
 
+def print_profile(times)
+  return if times.empty?
+  prev = times[0][1]
+  times.each{|t|
+    STDERR.puts("#{interval_bar(prev, t[1])} #{t[0]}")
+    prev = t[1]
+  }
+  STDERR.puts
+end
 
+def interval_bar(a, b)
+  a ||= b
+  ms = (b - a) * 1000
+  "[#{("#"*([16, (ms*2).round].min)).rjust(16)}] %.3fms" % [ms]
+end
+
+use_print_profile = true
+times = []
+times << ['begin', Time.now.to_f]
+
+require 'sqlite3'
+require 'json'
 require 'cgi'
 require 'uri'
 
+times << ['loaded libs', Time.now.to_f]
+
 cgi = CGI.new('html3')
+
 db = get_database
+times << ['get_database', Time.now.to_f]
 
 unless cgi.has_key?('page')
   head = cgi.header(
@@ -175,15 +209,18 @@ filename = cgi['item'].to_s
 good_filename = File.expand_path(filename).index(File.expand_path(".")) == 0
 error(cgi, "Bad filename.") unless good_filename
 error(cgi, "No such file.") unless File.exist?(filename) and File.file?(filename)
+times << ['filename', Time.now.to_f]
 
 metadata = get_metadata(filename, db)
 page = [cgi['page'].to_i, 1].max
+times << ['metadata', Time.now.to_f]
 
 pg = metadata['Doc.PageCount']
 error(cgi, "Failed to get page count of document.", filename, page) if pg.nil?
 pages = [1, pg.to_i].max
 
 page_text = get_page_text(filename, page, db)
+times << ['page text', Time.now.to_f]
 
 cites = get_document_citations(filename, metadata, db)
 citation_links = cites.map{|c|
@@ -193,6 +230,7 @@ citation_links = cites.map{|c|
     c['Title']
   end + (c['Authors'].empty? ? "" : " - " + c['Authors'].join(", "))
 }
+times << ['cites', Time.now.to_f]
 
 uri_pre = "reader.cgi?item=#{URI.escape(filename)}&page="
 page_pre = "page.cgi?item=#{URI.escape(filename)}&page="
@@ -532,4 +570,8 @@ head = cgi.header(
 )
 cgi.print(head)
 cgi.print(content)
+times << ['done', Time.now.to_f]
+
+print_profile(times) if use_print_profile
+
 
