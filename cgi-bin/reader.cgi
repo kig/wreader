@@ -417,7 +417,7 @@ head = cgi.header(
 )
 cgi.print(head)
 cgi.print(content)
-times << ['done', Time.now.to_f]
+times << ['create HTML', Time.now.to_f]
 
 WReader.print_profile(times) if use_print_profile
 
