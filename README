@@ -17,5 +17,11 @@ Requirements
 ------------
 
 Ruby 1.8
+
+Note: don't use the RubyGems versions, require 'rubygems' takes 100ms.
+
+JSON - http://rubyforge.org/projects/json/
+SQLite3 - http://rubyforge.org/projects/sqlite-ruby
 Metadata - http://github.com/kig/metadata/tree/
 Thumbnailer - http://github.com/kig/thumbnailer/tree/
+
