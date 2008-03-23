@@ -31,10 +31,9 @@ use_print_profile = true
 times = []
 times << ['begin', Time.now.to_f]
 
+require 'wreader'
 require 'cgi'
 require 'time'
-require 'wreader/reader'
-require 'wreader/utils'
 
 times << ['loaded libs', Time.now.to_f]
 

@@ -8,7 +8,7 @@ module WReader
   class Reader
     attr_reader :metadata, :filename, :db
 
-    def initialize(filename, database)
+    def initialize(filename, database=WReader.get_database)
       @filename = filename
       @db = database
     end

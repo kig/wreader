@@ -42,7 +42,7 @@ end
 
 $KCODE = 'u'
 
-require 'wreader/utils'
+require 'wreader'
 require 'metadata'
 require 'cgi'
 require 'uri'

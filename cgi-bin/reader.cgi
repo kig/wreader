@@ -32,8 +32,7 @@ use_print_profile = true
 times = []
 times << ['begin', Time.now.to_f]
 
-require 'wreader/reader'
-require 'wreader/utils'
+require 'wreader'
 require 'cgi'
 require 'uri'
 
