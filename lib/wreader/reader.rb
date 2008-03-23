@@ -73,19 +73,35 @@ module WReader
     end
 
     def get_page_text(page, end_page=nil)
-      get_page('text', page, end_page)
+      txt = get_page('text', page, end_page, true){|p1, p2, fn|
+        if p1 == 0
+          text = `pdftotext -enc UTF-8 #{fn.dump} -`
+        else
+          text = `pdftotext -f #{p1} -l #{p2} -enc UTF-8 #{fn.dump} -`
+        end
+        blast_ligatures(text)
+        text.split("\f")
+      }
+      return txt[0] unless end_page
+      txt
     end
 
     def get_page_html(page, end_page=nil)
-      get_page('html', page, end_page)
+      get_page('html', page, end_page, !end_page){|p1, p2, fn|
+        if p1 == 0
+          text = `pdftohtml -enc UTF-8 -stdout #{fn.dump}`
+        else
+          text = `pdftohtml -f #{p1} -l #{p2} -enc UTF-8 -stdout #{pdf.dump}`
+        end
+        [text]
+      }[0]
     end
 
-    def get_page(format, page, end_page=nil)
+    def get_page(format, page, end_page, use_db)
       unless %w(html text).include?(format)
         raise(ArgumentError, "Unsupported format #{format}")
       end
       page = 0 unless page
-      use_db = db and (format == 'text' or !end_page)
       if use_db
         text = db.execute("
           SELECT content
@@ -94,21 +110,11 @@ module WReader
           AND page >= ?
           AND page <= ?
           ORDER BY page ASC", filename, page, end_page || page).map{|r| r[0] }
-        return text[0] unless end_page
-        return text if text
+        return text unless text.empty?
       end
       pdf = pdf_filename
-      if pdf
-        if page == 0
-          text =`pdfto#{format} -enc UTF-8 #{pdf.dump} -`
-        else
-          text =`pdfto#{format} -f #{page} -l #{end_page || page} -enc UTF-8 #{pdf.dump} -`
-        end
-        blast_ligatures(text)
-      else
-        text = ""
-      end
-      text = format == 'text' ? text.split("\f") : [text]
+      text = [""]
+      text = yield(page, page || end_page, pdf) if pdf
       if use_db
         db.execute("BEGIN")
         (page..(end_page || page)).each{|i|
@@ -119,7 +125,6 @@ module WReader
         }
         db.execute("COMMIT")
       end
-      return text[0] unless end_page
       text
     end
 
