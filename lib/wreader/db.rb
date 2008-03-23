@@ -1,11 +1,13 @@
 require 'sqlite3'
 
+
 module WReader
+
 
   class SQLite3
     attr_reader :filename, :db
 
-    def initialize(filename="reader.db")
+    def initialize(filename=File.join(WReader.database_dir, "reader.db"))
       @filename = filename
       @db = get_database
     end
@@ -46,5 +48,6 @@ module WReader
     end
 
   end
+
 
 end

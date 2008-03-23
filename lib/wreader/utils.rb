@@ -1,10 +1,6 @@
 module WReader
 extend self
 
-  class << self
-    attr_accessor :document_dir
-  end
-  self.document_dir = "pdfs"
 
   def error(cgi, msg)
     cgi.out("status" => "SERVER_ERROR"){
@@ -44,5 +40,6 @@ extend self
     WReader.error(cgi, "Bad filename.") unless good_filename
     WReader.error(cgi, "No such file.") unless File.exist?(filename) and File.file?(filename)
   end
+
 
 end

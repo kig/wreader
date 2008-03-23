@@ -1,8 +1,10 @@
 require 'wreader/db'
 require 'json'
 
+
 module WReader
-  
+
+
   class Reader
     attr_reader :metadata, :filename, :db
 
@@ -127,5 +129,6 @@ module WReader
     end
 
   end
+
 
 end

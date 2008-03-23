@@ -52,7 +52,7 @@ end
 
 filename = cgi['item'].to_s
 
-reader = WReader::Reader.new(filename, WReader::SQLite3.new("reader.db"))
+reader = WReader::Reader.new(filename)
 times << ['init WReader::Reader', Time.now.to_f]
 
 # FIXME handle softlinks
