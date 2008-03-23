@@ -130,18 +130,11 @@ when 'mp3'
     cgi.print(header)
     STDOUT.flush
     if reader.pdf_filename
-      page = [1, reader.metadata.pages] unless page
-      text = reader.db.execute("
-        SELECT content
-        FROM page_texts
-        WHERE filename = ?
-        AND page >= ?
-        AND page <= ?
-        ORDER BY page ASC", item.to_s, page[0], page[-1]).join("\n\n")
+      page = [1, reader.metadata['Doc.PageCount']] unless page
+      text = reader.get_page_text(*page).join("\n\n")
     else # since not pdf, metadata doesn't come from database either...
       text = item.metadata['File.Content']
     end
-    dot = "."
     # TODO cache this somewhere
     IO.popen('uni2ascii -cdexf | text2mp3', 'rb+'){|f|
       done = false
