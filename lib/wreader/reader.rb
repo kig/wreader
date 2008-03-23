@@ -44,6 +44,7 @@ module WReader
         md = filename.to_pn.metadata
         if db
           text = md.delete('File.Content')
+          blast_ligatures(text)
           db.execute("BEGIN")
           db.execute(
             "INSERT INTO metadata (filename, json) VALUES (?, ?)",
@@ -71,40 +72,55 @@ module WReader
       return [] # TODO
     end
 
-    def get_page_text(page)
+    def get_page_text(page, end_page=nil)
       if db
-        text = db.get_first_row(%Q(
-          SELECT content FROM page_texts WHERE filename = ? AND page = ?
-        ), filename, page)
-        return text[0] if text
+        text = db.execute("
+          SELECT content
+          FROM page_texts
+          WHERE filename = ?
+          AND page >= ?
+          AND page <= ?
+          ORDER BY page ASC", filename, page, end_page || page).map{|r| r[0] }
+        return text[0] unless end_page
+        return text if text
       end
       pdf = pdf_filename
       if pdf
-        text =
-          `pdftotext -f #{page} -l #{page} -enc UTF-8 -nopgbrk #{pdf.dump} - `.
-            gsub("æ", 'ae').
-            gsub("Æ", 'AE').
-            gsub("œ", "ce").
-            gsub("Œ", "CE").
-            gsub("ŋ", "ng").
-            gsub("Ŋ", "NG").
-            gsub("ʩ", "fng").
-            gsub("ﬀ", "ff").
-            gsub("ﬁ", "fi").
-            gsub("ﬂ", "fl").
-            gsub("ﬃ", "ffi").
-            gsub("ﬄ", "ffl").
-            gsub("ﬅ", "ft").
-            gsub("ﬆ", "st")
+        text =`pdftotext -f #{page} -l #{end_page || page} -enc UTF-8 #{pdf.dump} -`
+        blast_ligatures(text)
       else
         text = ""
       end
+      text = text.split("\f")
       if db
-        db.execute(
-          "INSERT INTO page_texts (filename, page, content) VALUES (?, ?, ?)",
-          filename, page, text
-        )
+        db.execute("BEGIN")
+        (page..(end_page || page)).each{|i|
+          db.execute(
+            "INSERT INTO page_texts (filename, page, content) VALUES (?, ?, ?)",
+            filename, i, text[i-page]
+          )
+        }
+        db.execute("COMMIT")
       end
+      return text[0] unless end_page
+      text
+    end
+
+    def blast_ligatures(text)
+      text.gsub!("æ", 'ae')
+      text.gsub!("Æ", 'AE')
+      text.gsub!("œ", "ce")
+      text.gsub!("Œ", "CE")
+      text.gsub!("ŋ", "ng")
+      text.gsub!("Ŋ", "NG")
+      text.gsub!("ʩ", "fng")
+      text.gsub!("ﬀ", "ff")
+      text.gsub!("ﬁ", "fi")
+      text.gsub!("ﬂ", "fl")
+      text.gsub!("ﬃ", "ffi")
+      text.gsub!("ﬄ", "ffl")
+      text.gsub!("ﬅ", "ft")
+      text.gsub!("ﬆ", "st")
       text
     end
 
@@ -118,14 +134,10 @@ module WReader
     end
 
     def to_png(png_filename, size=1024, page=1)
-      require 'fileutils'
-      tmp_file = "/tmp/page_images_#{ENV['USER']}/#{Process.pid}-#{Time.now.to_f}.png"
-      FileUtils.mkdir_p("/tmp/page_images_#{ENV['USER']}")
       system("thumbnailer",
         "-i", "application/pdf", "-k",
         "-s", size.to_s, "-p", (page-1).to_s,
-        pdf_filename, tmp_file)
-      FileUtils.mv(tmp_file, png_filename)
+        pdf_filename, png_filename)
       png_filename
     end
 
