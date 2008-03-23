@@ -43,6 +43,18 @@ module WReader
           CREATE UNIQUE INDEX page_texts_filename_page_idx
           ON page_texts(filename, page);
         ))
+        db.execute(%Q(
+          CREATE TABLE page_htmls (
+            filename TEXT NOT NULL,
+            page INTEGER NOT NULL,
+            content TEXT
+          )
+        ))
+        db.execute(%Q(CREATE INDEX page_htmls_filename_idx ON page_htmls(filename)))
+        db.execute(%Q(
+          CREATE UNIQUE INDEX page_htmls_filename_page_idx
+          ON page_htmls(filename, page);
+        ))
       end
       db
     end

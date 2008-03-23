@@ -180,10 +180,8 @@ when 'txt'
 
 
 when 'html'
-  # TODO implement html converter, use pdftohtml and temp pdfs for documents
   if reader.pdf_filename
-    page = [1, reader.metadata['Doc.PageCount']] unless page
-    text = reader.get_page_html(*page).join("\n\n")
+    text = reader.get_page_html(*page)
   else
     text = "<html></html>"
   end

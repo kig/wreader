@@ -67,10 +67,7 @@ pdf = reader.pdf_filename
 if pdf
   case type
   when 'html'
-    page_fn = pdf+"-page-#{page}.html"
-    unless File.exist?(page_fn)
-      system("pdftohtml -f #{page} -l #{page} -noframes -enc UTF-8 -p -stdout #{pdf} > #{page_fn}")
-    end
+    data = reader.get_page_html(page)
     type = "text/html"
   when 'txt'
     data = reader.get_page_text(page)

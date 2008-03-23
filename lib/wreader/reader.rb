@@ -73,10 +73,23 @@ module WReader
     end
 
     def get_page_text(page, end_page=nil)
-      if db
+      get_page('text', page, end_page)
+    end
+
+    def get_page_html(page, end_page=nil)
+      get_page('html', page, end_page)
+    end
+
+    def get_page(format, page, end_page=nil)
+      unless %w(html text).include?(format)
+        raise(ArgumentError, "Unsupported format #{format}")
+      end
+      page = 0 unless page
+      use_db = db and (format == 'text' or !end_page)
+      if use_db
         text = db.execute("
           SELECT content
-          FROM page_texts
+          FROM page_#{format}s
           WHERE filename = ?
           AND page >= ?
           AND page <= ?
@@ -86,17 +99,21 @@ module WReader
       end
       pdf = pdf_filename
       if pdf
-        text =`pdftotext -f #{page} -l #{end_page || page} -enc UTF-8 #{pdf.dump} -`
+        if page == 0
+          text =`pdfto#{format} -enc UTF-8 #{pdf.dump} -`
+        else
+          text =`pdfto#{format} -f #{page} -l #{end_page || page} -enc UTF-8 #{pdf.dump} -`
+        end
         blast_ligatures(text)
       else
         text = ""
       end
-      text = text.split("\f")
-      if db
+      text = format == 'text' ? text.split("\f") : [text]
+      if use_db
         db.execute("BEGIN")
         (page..(end_page || page)).each{|i|
           db.execute(
-            "INSERT INTO page_texts (filename, page, content) VALUES (?, ?, ?)",
+            "INSERT INTO page_#{format}s (filename, page, content) VALUES (?, ?, ?)",
             filename, i, text[i-page]
           )
         }
