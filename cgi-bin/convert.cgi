@@ -227,6 +227,8 @@ when 'html'
 else
   WReader.error(cgi, "Unknown type #{type}")
 end
+
+
 times << ['done', Time.now.to_f]
 WReader.print_profile(times)
 
