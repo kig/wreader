@@ -15,9 +15,6 @@ http://<myhost>/<my_cgi_dir>/reader.cgi?item=pdfs/mypdf.pdf
 
 Hack in an upload system and document search, etc.
 
-To read non-PDFs, you need to create PDF files of them:
-$ thumbnailer -s 128 -k my.ppt my.ppt.png # and you get a nice thumbnail too!
-
 
 Configuration
 -------------
