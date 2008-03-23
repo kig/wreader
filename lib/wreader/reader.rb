@@ -41,7 +41,13 @@ module WReader
         require 'metadata'
         Metadata.no_text = !db # get full text now, store pages in DB
         Metadata.guess_metadata = true
+        pdf = pdf_filename # make temp pdf for non-pdf docs
         md = filename.to_pn.metadata
+        if pdf
+          Metadata.no_text = true
+          Metadata.guess_metadata = false
+          md['Doc.PageCount'] = pdf.to_pn.metadata['Doc.PageCount']
+        end
         if db
           text = md.delete('File.Content')
           blast_ligatures(text)
@@ -151,16 +157,30 @@ module WReader
         pdf = filename
       elsif File.exist?(filename+"-temp.pdf")
         pdf = filename+"-temp.pdf"
+      else
+        thumbnail # make temp pdf for non-pdf docs
+        if File.exist?(filename+"-temp.pdf")
+          pdf = filename+"-temp.pdf"
+        end
       end
       pdf
     end
 
     def to_png(png_filename, size=1024, page=1)
       system("thumbnailer",
-        "-i", "application/pdf", "-k",
+        "-i", "application/pdf",
         "-s", size.to_s, "-p", (page-1).to_s,
         pdf_filename, png_filename)
       png_filename
+    end
+
+    # make a nice thumbnail
+    def thumbnail(size=128, force=false)
+      tfn = filename + "-#{size}.png"
+      if not File.exist?(tfn) or force
+        system("thumbnailer", "-k", "-s", size.to_s, filename, tfn)
+      end
+      tfn
     end
 
   end
