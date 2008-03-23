@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+
+require 'thread'
+
+class String
+ def to_mp3
+  pipe = IO.popen('text2wave | lame --quiet -b 32 -m m --resample 22.05 - -','w+')
+  begin
+   if size < 4096
+    pipe.write(self)
+    pipe.close_write
+    d = pipe.read
+   else
+    writer = Thread.new{
+     i = 0
+     until i >= size
+      pipe.write(self[i,4096])
+      i+=4096
+     end
+     pipe.close_write
+    }
+    d = ""
+    d << pipe.read(4096) until pipe.eof
+   end
+  rescue
+   pipe.close unless pipe.closed?
+   raise
+  ensure
+   pipe.close unless pipe.closed?
+  end
+  d
+ end
+end
+
+until STDIN.eof
+ line = STDIN.gets(".").to_s
+ STDOUT.write(line.to_mp3)
+ STDOUT.flush
+end
