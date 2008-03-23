@@ -60,6 +60,7 @@ module WReader
             }
           end
           db.execute("COMMIT")
+          md['File.Content'] = pages.join("\n\n") if pages
         end
       end
       @metadata = md

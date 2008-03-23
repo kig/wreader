@@ -26,6 +26,8 @@
 # item=item_path (2007/10-10-Thu/foo.pdf)
 # page=page_num (4)
 
+$KCODE = 'u'
+
 GC.disable # no need to GC on a CGI script
 
 use_print_profile = true

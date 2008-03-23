@@ -27,6 +27,10 @@
 # page=page_num (4)
 # size=long_side_in_px (1024)
 
+$KCODE = 'u'
+
+GC.disable # no need to GC on a CGI script
+
 use_print_profile = true
 times = []
 times << ['begin', Time.now.to_f]
