@@ -56,6 +56,40 @@ times << ['metadata', Time.now.to_f]
 case type
 
 
+when 'png'
+  pdf = reader.pdf_filename
+  if pdf
+    size = [0, [2048, cgi['size'].to_s.to_i].min ].max
+    size = 1024 if size == 0
+    page_fn = pdf+"-page-#{page}-#{size}.png"
+    reader.to_png(page_fn, size, page) unless File.exist?(page_fn)
+    pid = fork {
+      page_fn = pdf+"-page-#{page+1}-#{size}.png"
+      reader.to_png(page_fn, size, page+1) unless File.exist?(page_fn)
+      page_fn = pdf+"-page-#{page-1}-#{size}.png"
+      reader.to_png(page_fn, size, page-1) unless File.exist?(page_fn)
+      exit!(0)
+    }
+    Process.detach(pid)
+    type = "image/png"
+  end
+  if File.exist?(page_fn)
+    head = cgi.header(
+      "type" => type,
+      "length" => File.size(page_fn),
+      "status" => "OK",
+      "expires" => Time.now + (86400 * 365),
+      "Connection" => "close",
+      "Last-modified" => File.mtime(page_fn).httpdate,
+      "Cache-control" => "public, max-age=#{86400*365}"
+    )
+    cgi.print(head)
+    cgi.print(File.read(page_fn))
+  else
+    WReader.error(cgi, "Failed to create page")
+  end
+
+
 when 'pdf'
   pdf = reader.pdf_filename
   if pdf
