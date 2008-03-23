@@ -30,7 +30,6 @@ $KCODE = 'u'
 
 GC.disable # no need to GC on a CGI script
 
-use_print_profile = true
 times = []
 times << ['begin', Time.now.to_f]
 

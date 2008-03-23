@@ -17,6 +17,7 @@ extend self
   end
 
   def print_profile(times)
+    return unless WReader.use_print_profile
     return if times.empty?
     prev = times[0][1]
     times.each{|t|

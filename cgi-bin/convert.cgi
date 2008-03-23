@@ -29,7 +29,6 @@
 
 $KCODE = 'u'
 
-use_print_profile = true
 times = []
 times << ['begin', Time.now.to_f]
 
@@ -53,11 +52,10 @@ times << ['reader init', Time.now.to_f]
 item.instance_variable_set("@metadata", reader.metadata)
 times << ['metadata', Time.now.to_f]
 
+
 case type
-when 'jpg'
-  # TODO implement convert to JPEG (use page query var)
-when 'png'
-  # TODO implement convert to PNG (use page query var)
+
+
 when 'pdf'
   pdf = reader.pdf_filename
   if pdf
@@ -72,6 +70,8 @@ when 'pdf'
   else
     not_found(cgi, path, type)
   end
+
+
 when 'mp3'
   case item.mimetype.to_s
   when 'audio/mpeg'
@@ -152,23 +152,7 @@ when 'mp3'
       }
       begin
         text.each_line{|l|
-          f.puts(
-            l.chomp.
-              gsub("æ", 'ae').
-              gsub("Æ", 'AE').
-              gsub("œ", "ce").
-              gsub("Œ", "CE").
-              gsub("ŋ", "ng").
-              gsub("Ŋ", "NG").
-              gsub("ʩ", "fng").
-              gsub("ﬀ", "ff").
-              gsub("ﬁ", "fi").
-              gsub("ﬂ", "fl").
-              gsub("ﬃ", "ffi").
-              gsub("ﬄ", "ffl").
-              gsub("ﬅ", "ft").
-              gsub("ﬆ", "st") + '.'
-          )
+          f.puts(reader.blast_ligatures(l).chomp + '.')
         }
       rescue
       end
@@ -177,16 +161,12 @@ when 'mp3'
       t.join
     }
   end
+
+  
 when 'txt'
   if reader.pdf_filename
-    page = [1, reader.metadata.pages] unless page
-    text = reader.db.execute("
-      SELECT content
-      FROM page_texts
-      WHERE filename = ?
-      AND page >= ?
-      AND page <= ?
-      ORDER BY page ASC", item.to_s, page[0], page[-1]).join("\n\n")
+    page = [1, reader.metadata['Doc.PageCount']] unless page
+    text = reader.get_page_text(*page).join("\n\n")
   else # since not pdf, metadata doesn't come from database either...
     text = item.metadata['File.Content'].to_s
   end
@@ -197,9 +177,27 @@ when 'txt'
     "Content-disposition" => "inline; filename=#{URI.escape(File.basename(item.to_s))}.txt;"
   ))
   cgi.print(text)
+
+
 when 'html'
   # TODO implement html converter, use pdftohtml and temp pdfs for documents
+  if reader.pdf_filename
+    page = [1, reader.metadata['Doc.PageCount']] unless page
+    text = reader.get_page_html(*page).join("\n\n")
+  else
+    text = "<html></html>"
+  end
+  cgi.print(cgi.header(
+    "type" => "text/html",
+    "expires" => Time.now + (86400 * 365),
+    "Content-length" => text.length,
+    "Content-disposition" => "inline; filename=#{URI.escape(File.basename(item.to_s))}.html;"
+  ))
+  cgi.print(text)
+
 else
   WReader.error(cgi, "Unknown type #{type}")
 end
 times << ['done', Time.now.to_f]
+WReader.print_profile(times)
+
