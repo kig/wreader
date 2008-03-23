@@ -47,7 +47,7 @@ page = cgi['page'].to_s.split("-").map{|n|n.to_i} if cgi.has_key? 'page'
 
 WReader.assert_filename(cgi, path)
 item = path.to_pn
-reader = WReader.new(path)
+reader = WReader::Reader.new(path)
 times << ['reader init', Time.now.to_f]
 
 item.metadata = reader.metadata
