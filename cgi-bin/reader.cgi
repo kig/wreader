@@ -419,6 +419,6 @@ cgi.print(head)
 cgi.print(content)
 times << ['create HTML', Time.now.to_f]
 
-WReader.print_profile(times) if use_print_profile
+WReader.print_profile(times)
 
 

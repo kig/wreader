@@ -107,5 +107,5 @@ else
 end
 
 
-WReader.print_profile(times) if use_print_profile
+WReader.print_profile(times)
 
