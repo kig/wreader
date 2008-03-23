@@ -50,7 +50,7 @@ item = path.to_pn
 reader = WReader::Reader.new(path)
 times << ['reader init', Time.now.to_f]
 
-item.metadata = reader.metadata
+item.instance_variable_set("@metadata", reader.metadata)
 times << ['metadata', Time.now.to_f]
 
 case type
