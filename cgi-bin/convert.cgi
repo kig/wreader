@@ -59,6 +59,7 @@ case type
 when 'image'
   pdf = reader.pdf_filename
   if pdf
+    page = page[0]
     size = [0, [2048, cgi['size'].to_s.to_i].min ].max
     size = 1024 if size == 0
     page_fn = pdf+"-page-#{page}-#{size}.png"
