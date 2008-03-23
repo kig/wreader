@@ -65,10 +65,10 @@ when 'image'
     page_fn = pdf+"-page-#{page}-#{size}.png"
     reader.to_png(page_fn, size, page) unless File.exist?(page_fn)
     pid = fork {
-      page_fn = pdf+"-page-#{page+1}-#{size}.png"
-      reader.to_png(page_fn, size, page+1) unless File.exist?(page_fn)
-      page_fn = pdf+"-page-#{page-1}-#{size}.png"
-      reader.to_png(page_fn, size, page-1) unless File.exist?(page_fn)
+      npage_fn = pdf+"-page-#{page+1}-#{size}.png"
+      reader.to_png(npage_fn, size, page+1) unless File.exist?(npage_fn)
+      npage_fn = pdf+"-page-#{page-1}-#{size}.png"
+      reader.to_png(npage_fn, size, page-1) unless File.exist?(npage_fn)
       exit!(0)
     }
     Process.detach(pid)

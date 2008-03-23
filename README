@@ -6,9 +6,11 @@ First, install the support library:
 
 Then, copy the contents of cgi-bin to your webserver's CGI directory.
 
-Make the subdirs pdfs/ and database/ to the CGI directory, and make them
+Make the subdirs pdfs, temp and database to the CGI directory, and make them
 writable by the CGI script user account (e.g. www-data.)
-$ mkdir pdfs database; chgrp www-data pdfs database; chmod 775 pdfs database
+$ mkdir pdfs database temp
+$ chgrp www-data pdfs database temp
+$ chmod 775 pdfs database temp
 
 Copy a pdf to pdfs/ and point your browser to
 http://<myhost>/<my_cgi_dir>/reader.cgi?item=pdfs/mypdf.pdf
