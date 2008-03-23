@@ -93,6 +93,7 @@ if pdf
       "length" => data ? data.size : File.size(page_fn),
       "status" => "OK",
       "expires" => Time.now + (86400 * 365),
+      "Connection" => "close",
       "Last-modified" => File.mtime(data ? pdf : page_fn).httpdate,
       "Cache-control" => "public, max-age=#{86400*365}"
     )

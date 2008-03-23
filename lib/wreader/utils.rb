@@ -3,7 +3,7 @@ extend self
 
 
   def error(cgi, msg)
-    cgi.out("status" => "SERVER_ERROR"){
+    cgi.out("status" => "SERVER_ERROR", "Connection" => "close"){
       cgi.html{ cgi.body{
         cgi.h2{
           "ERROR in

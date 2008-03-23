@@ -125,6 +125,7 @@ when 'mp3'
   else
     header = cgi.header(
       "type" => "audio/mpeg",
+      "Connection" => "close",
       "Content-disposition" => "attachment; filename=#{URI.escape(File.basename(item.to_s))}.mp3;"
     )
     cgi.print(header)
@@ -166,6 +167,7 @@ when 'txt'
   cgi.print(cgi.header(
     "type" => "text/plain",
     "expires" => Time.now + (86400 * 365),
+    "Connection" => "close",
     "Content-length" => text.length,
     "Content-disposition" => "inline; filename=#{URI.escape(File.basename(item.to_s))}.txt;"
   ))
@@ -181,6 +183,7 @@ when 'html'
   cgi.print(cgi.header(
     "type" => "text/html",
     "expires" => Time.now + (86400 * 365),
+    "Connection" => "close",
     "Content-length" => text.length,
     "Content-disposition" => "inline; filename=#{URI.escape(File.basename(item.to_s))}.html;"
   ))
