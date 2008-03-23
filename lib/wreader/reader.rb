@@ -91,7 +91,7 @@ module WReader
         if p1 == 0
           text = `pdftohtml -enc UTF-8 -stdout #{fn.dump}`
         else
-          text = `pdftohtml -f #{p1} -l #{p2} -enc UTF-8 -stdout #{pdf.dump}`
+          text = `pdftohtml -f #{p1} -l #{p2} -enc UTF-8 -stdout #{fn.dump}`
         end
         [text]
       }[0]
