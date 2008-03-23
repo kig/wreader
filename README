@@ -6,16 +6,23 @@ First, install the support library:
 
 Then, copy the contents of cgi-bin to your webserver's CGI directory.
 
-Make a pdfs/ subdir to the CGI directory, and make it writable by the CGI
-script user account (e.g. www-data.)
+Make the subdirs pdfs/ and database/ to the CGI directory, and make them
+writable by the CGI script user account (e.g. www-data.)
+$ mkdir pdfs database; chgrp www-data pdfs database; chmod 775 pdfs database
 
 Copy a pdf to pdfs/ and point your browser to
-http://myhost/my_cgi_dir/reader.cgi?item=pdfs/mypdf.pdf
+http://<myhost>/<my_cgi_dir>/reader.cgi?item=pdfs/mypdf.pdf
 
-Hack in an upload system and metadata storage system, etc.
+Hack in an upload system and document search, etc.
 
 To read non-PDFs, you need to create PDF files of them:
 $ thumbnailer -s 128 -k my.ppt my.ppt.png # and you get a nice thumbnail too!
+
+
+Configuration
+-------------
+
+Edit lib/wreader/config.rb to your liking.
 
 
 Requirements

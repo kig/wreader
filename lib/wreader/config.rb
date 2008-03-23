@@ -2,10 +2,10 @@ module WReader
 extend self
 
   class << self
-    attr_accessor :database_dir, :document_dir
+    attr_accessor :database_dir, :document_dir, :database_engine
   end
   self.document_dir = "pdfs"
-  
+
   self.database_engine = WReader::SQLite3
   self.database_dir = "database"
 
