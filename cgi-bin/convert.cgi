@@ -53,7 +53,7 @@ path = cgi['item'].to_s
 type = cgi['type'].to_s
 page = cgi['page'].to_s.to_i
 
-WReader.assert_filename(cgi, filename)
+WReader.assert_filename(cgi, path)
 item = path.to_pn
 
 # FIXME handle softlinks
