@@ -56,7 +56,7 @@ times << ['metadata', Time.now.to_f]
 case type
 
 
-when 'png'
+when 'image'
   pdf = reader.pdf_filename
   if pdf
     size = [0, [2048, cgi['size'].to_s.to_i].min ].max

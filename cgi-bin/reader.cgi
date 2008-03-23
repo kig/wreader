@@ -80,7 +80,7 @@ citation_links = cites.map{|c|
 times << ['cites', Time.now.to_f]
 
 uri_pre = "reader.cgi?item=#{URI.escape(filename)}&page="
-page_pre = "convert.cgi?item=#{URI.escape(filename)}&page="
+page_pre = "convert.cgi?type=image&item=#{URI.escape(filename)}&page="
 
 short_pages_div = %Q(
         <div class="short_pages" id="top_navigation">
@@ -165,7 +165,7 @@ thumb_size = 128
 thumb_dims = reader.dims(thumb_size)
 thumb_text = %Q(
           #{
-            pgu = "convert.cgi?item=#{URI.escape(filename)}&size=#{thumb_size}&page="
+            pgu = "convert.cgi?type=image&item=#{URI.escape(filename)}&size=#{thumb_size}&page="
             sp = [1, page-2].max
 #             (sp..[sp+4, pages].min)
             (1..pages).map{|i|
