@@ -62,7 +62,8 @@ when 'image'
     page = page[0]
     size = [0, [2048, cgi['size'].to_s.to_i].min ].max
     size = 1024 if size == 0
-    page_fn = File.join(WReader.page_dir, pdf+"-page-#{page}-#{size}.png")
+    page_fn = File.join(WReader.page_dir,
+                        File.basename(pdf)+"-page-#{page}-#{size}.png")
     reader.to_png(page_fn, size, page) unless File.exist?(page_fn)
     pid = fork {
       if page <= reader.metadata['Doc.PageCount']
