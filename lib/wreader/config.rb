@@ -3,7 +3,7 @@ extend self
 
   class << self
     attr_accessor :database_dir, :document_dir, :database_engine,
-                  :use_print_profile, :temp_dir
+                  :use_print_profile, :temp_dir, :thumb_dir, :page_dir
   end
   self.document_dir = "pdfs"
 
