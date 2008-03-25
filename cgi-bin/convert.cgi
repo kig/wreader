@@ -62,13 +62,19 @@ when 'image'
     page = page[0]
     size = [0, [2048, cgi['size'].to_s.to_i].min ].max
     size = 1024 if size == 0
-    page_fn = pdf+"-page-#{page}-#{size}.png"
+    page_fn = File.join(WReader.page_dir, pdf+"-page-#{page}-#{size}.png")
     reader.to_png(page_fn, size, page) unless File.exist?(page_fn)
     pid = fork {
-      npage_fn = pdf+"-page-#{page+1}-#{size}.png"
-      reader.to_png(npage_fn, size, page+1) unless File.exist?(npage_fn)
-      npage_fn = pdf+"-page-#{page-1}-#{size}.png"
-      reader.to_png(npage_fn, size, page-1) unless File.exist?(npage_fn)
+      if page <= reader.metadata['Doc.PageCount']
+        npage_fn = File.join(WReader.page_dir,
+                             File.basename(pdf)+"-page-#{page+1}-#{size}.png")
+        reader.to_png(npage_fn, size, page+1) unless File.exist?(npage_fn)
+      end
+      if page > 1
+        npage_fn = File.join(WReader.page_dir,
+                             File.basename(pdf)+"-page-#{page-1}-#{size}.png")
+        reader.to_png(npage_fn, size, page-1) unless File.exist?(npage_fn)
+      end
       exit!(0)
     }
     Process.detach(pid)

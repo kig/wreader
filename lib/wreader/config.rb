@@ -10,6 +10,8 @@ extend self
   self.database_engine = WReader::SQLite3
   self.database_dir = "database"
   self.temp_dir = "temp"
+  self.thumb_dir = "thumbs"
+  self.page_dir = "pages"
 
   self.use_print_profile = true
 
