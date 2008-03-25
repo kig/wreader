@@ -75,17 +75,17 @@ when 'image'
     type = "image/png"
   end
   if File.exist?(page_fn)
+    data = File.read(page_fn)
     head = cgi.header(
       "type" => type,
-      "length" => File.size(page_fn),
+      "length" => data.size,
       "status" => "OK",
       "expires" => Time.now + (86400 * 365),
-      "Connection" => "close",
       "Last-modified" => File.mtime(page_fn).httpdate,
       "Cache-control" => "public, max-age=#{86400*365}"
     )
     cgi.print(head)
-    cgi.print(File.read(page_fn))
+    cgi.print(data)
   else
     WReader.error(cgi, "Failed to create page")
   end
@@ -202,7 +202,6 @@ when 'txt'
   cgi.print(cgi.header(
     "type" => "text/plain",
     "expires" => Time.now + (86400 * 365),
-    "Connection" => "close",
     "Content-length" => text.length,
     "Content-disposition" => "inline; filename=#{URI.escape(File.basename(item.to_s))}.txt;"
   ))
@@ -218,7 +217,6 @@ when 'html'
   cgi.print(cgi.header(
     "type" => "text/html",
     "expires" => Time.now + (86400 * 365),
-    "Connection" => "close",
     "Content-length" => text.length,
     "Content-disposition" => "inline; filename=#{URI.escape(File.basename(item.to_s))}.html;"
   ))

@@ -413,7 +413,6 @@ head = cgi.header(
   "length" => content.size,
   "status" => "OK",
   "expires" => Time.now + (86400 * 365),
-  "Connection" => "close",
   "Last-modified" => File.mtime(filename).httpdate
 )
 cgi.print(head)
