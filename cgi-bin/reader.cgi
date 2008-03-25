@@ -52,12 +52,11 @@ end
 
 filename = cgi['item'].to_s
 
+WReader.assert_filename(cgi, filename)
+times << ['assert filename', Time.now.to_f]
+
 reader = WReader::Reader.new(filename)
 times << ['init WReader::Reader', Time.now.to_f]
-
-# FIXME handle softlinks
-WReader.assert_filename(cgi, filename)
-times << ['filename', Time.now.to_f]
 
 metadata = reader.metadata
 page = [cgi['page'].to_i, 1].max
@@ -68,16 +67,6 @@ pages = [1, pg.to_i].max
 
 page_text = reader.get_page_text(page)
 times << ['page text', Time.now.to_f]
-
-cites = reader.get_document_citations
-citation_links = cites.map{|c|
-  if c['URL']
-    cgi.a(c['URL']){ c['Title'] }
-  else
-    c['Title']
-  end + (c['Authors'].empty? ? "" : " - " + c['Authors'].join(", "))
-}
-times << ['cites', Time.now.to_f]
 
 uri_pre = "reader.cgi?item=#{URI.escape(filename)}&page="
 page_pre = "convert.cgi?type=image&item=#{URI.escape(filename)}&page="
@@ -186,14 +175,6 @@ text = %Q(
   </div>
 )
 
-citations = citation_links.empty? ? "" : %Q(
-  <div id="citations">
-    <ul><li>
-      #{citation_links.join("</li><li>")}
-    </li></ul>
-  </div>
-)
-
 
 item_metadata = %Q(
   <div id="metadata">
@@ -237,10 +218,6 @@ item_metadata = %Q(
       <h3>Description</h3>
       <p>
         #{CGI.escapeHTML(metadata['Doc.Description'] || "")}
-      </p>
-      <h3>References</h3>
-      <p>
-        #{citations}
       </p>
     </form>
   </div>
