@@ -73,21 +73,23 @@ when 'image'
     }
     Process.detach(pid)
     type = "image/png"
-  end
-  if File.exist?(page_fn)
-    data = File.read(page_fn)
-    head = cgi.header(
-      "type" => type,
-      "length" => data.size,
-      "status" => "OK",
-      "expires" => Time.now + (86400 * 365),
-      "Last-modified" => File.mtime(page_fn).httpdate,
-      "Cache-control" => "public, max-age=#{86400*365}"
-    )
-    cgi.print(head)
-    cgi.print(data)
+    if File.exist?(page_fn)
+      data = File.read(page_fn)
+      head = cgi.header(
+        "type" => type,
+        "length" => data.size,
+        "status" => "OK",
+        "expires" => Time.now + (86400 * 365),
+        "Last-modified" => File.mtime(page_fn).httpdate,
+        "Cache-control" => "public, max-age=#{86400*365}"
+      )
+      cgi.print(head)
+      cgi.print(data)
+    else
+      WReader.error(cgi, "Failed to create page image")
+    end
   else
-    WReader.error(cgi, "Failed to create page")
+    WReader.error(cgi, "Couldn't create PDF")
   end
 
 

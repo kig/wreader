@@ -158,9 +158,12 @@ module WReader
       elsif File.exist?(filename+"-temp.pdf")
         pdf = filename+"-temp.pdf"
       else
-        thumbnail # make temp pdf for non-pdf docs
-        if File.exist?(filename+"-temp.pdf")
-          pdf = filename+"-temp.pdf"
+        2.times do
+          thumbnail(128, true) # make temp pdf for non-pdf docs
+          if File.exist?(filename+"-temp.pdf")
+            pdf = filename+"-temp.pdf"
+            break
+          end
         end
       end
       pdf
