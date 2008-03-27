@@ -46,9 +46,9 @@ items = %Q(
   <div id="items">
     #{
       browser.items.map do |item|
-        cgi.a("reader.cgi?item=" + item.path){
+        cgi.p { cgi.a("reader.cgi?item=" + item.path){
           CGI.escapeHTML(item.title)
-        }
+        } }
       end
     }
   </div>
