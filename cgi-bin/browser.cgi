@@ -47,7 +47,9 @@ items = %Q(
     #{
       browser.items.map do |item|
         cgi.p { cgi.a("reader.cgi?item=" + item.filename){
-          cgi.img(item.thumbnail)
+          cgi.img(item.thumbnail) +
+          "<br>" +
+          item.metadata['Doc.Title'] || File.basename(item.filename)
         } }
       end
     }
