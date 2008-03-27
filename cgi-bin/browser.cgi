@@ -59,11 +59,20 @@ footer = %Q(
   <br><br>
 )
 
+style = %Q(
+  <style type="text/stylesheet">
+    img {
+      border : 0px;
+    }
+  </style>
+)
+
 content = cgi.html{
   cgi.head{
-    cgi.title{ "Documents" }
+    cgi.title{ "Documents" } +
+    style
   } +
-  cgi.body{
+  cgi.body {
     header +
     items +
     footer
