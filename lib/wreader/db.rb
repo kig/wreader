@@ -26,12 +26,6 @@ module WReader
       else
         db = ::SQLite3::Database.new(filename)
         db.execute(%Q(
-          CREATE TABLE items (
-            filename TEXT UNIQUE NOT NULL,
-            title TEXT
-          )
-        ))
-        db.execute(%Q(
           CREATE TABLE metadata (
             filename TEXT UNIQUE NOT NULL,
             json TEXT
