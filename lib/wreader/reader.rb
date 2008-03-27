@@ -181,7 +181,7 @@ module WReader
 
     # make a nice thumbnail
     def thumbnail(size=128, force=false)
-      tfn = File.join(WReader.thumb_dir, filename + "-#{size}.png")
+      tfn = File.join(WReader.thumb_dir, File.basename(filename) + "-#{size}.png")
       if not File.exist?(tfn) or force
         system("thumbnailer", "-k", "-s", size.to_s, filename, tfn)
       end
