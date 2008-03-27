@@ -1,4 +1,5 @@
 require 'wreader/db'
+require 'wreader/reader'
 
 module WReader
 
@@ -11,20 +12,9 @@ module WReader
     end
 
     def items
-      files = Dir[File.join(WReader.document_dir, "*")]
+      files = Dir[File.join(WReader.document_dir, "*")].sort
       files.delete_if{|f| f =~ /\-temp\.pdf$/ }
-      files.map{|fn| Item.new(*fn) }
-    end
-
-  end
-
-
-  class Item
-    attr_reader :path, :title
-
-    def initialize(path, title=File.basename(path))
-      @path = path
-      @title = title || File.basename(path)
+      files.map{|fn| WReader::Reader.new(fn, db) }
     end
 
   end

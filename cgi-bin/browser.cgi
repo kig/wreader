@@ -46,8 +46,8 @@ items = %Q(
   <div id="items">
     #{
       browser.items.map do |item|
-        cgi.p { cgi.a("reader.cgi?item=" + item.path){
-          CGI.escapeHTML(item.title)
+        cgi.p { cgi.a("reader.cgi?item=" + item.filename){
+          cgi.img(item.thumbnail)
         } }
       end
     }
