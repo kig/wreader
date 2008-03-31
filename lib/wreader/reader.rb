@@ -180,10 +180,15 @@ module WReader
     end
 
     # make a nice thumbnail
-    def thumbnail(size=128, force=false)
+    def thumbnail(size=256, force=false)
       tfn = File.join(WReader.thumb_dir, File.basename(filename) + "-#{size}.png")
       if not File.exist?(tfn) or force
-        system("thumbnailer", "-k", "-s", size.to_s, filename, tfn)
+        btfn = File.join(WReader.thumb_dir, File.basename(filename) + "-256.png")
+        if File.exist?(btfn)
+          system("thumbnailer", "-s", size.to_s, File.expand_path(btfn), File.expand_path(tfn))
+        else
+          system("ruby", "../pdfthumb.rb", File.expand_path(pdf_filename), File.expand_path(tfn), size.to_s)
+        end
       end
       tfn
     end
