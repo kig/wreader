@@ -129,8 +129,9 @@ when 'mp3'
       cgi.print(header)
       STDOUT.flush
       # STDERR.puts("sending file "+item.to_s)
-      # FIXME attack vector with filename?
-      exec("cat #{item.to_s.dump}")
+      File.open(item.to_s,'rb'){|f|
+        cgi.print(f.read(32768)) until f.eof?
+      }
     else
       ib = item.metadata['Audio.Bitrate'].to_i
       if ib != 0
@@ -150,9 +151,14 @@ when 'mp3'
       bytes_per_sec = 1.1 * bitrate * 125
       secs_per_4k = 4096 / bytes_per_sec
       counter = 20
-      # FIXME attack vector with nasty filenames?
       # TODO cache or pregen the resampled mp3s
-      IO.popen("lame --mp3input --resample #{bitrate < 24 ? 11.025 : (bitrate < 96 ? 22.05 : 44.1)} -b #{bitrate} #{item.to_s.dump} - 2>/dev/null", "rb"){|f|
+      IO.popen("lame --mp3input --resample #{bitrate < 24 ? 11.025 : (bitrate < 96 ? 22.05 : 44.1)} -b #{bitrate} - - 2>/dev/null", "rb+"){|f|
+        writer = Thread.new{
+          File.open(item.to_s,'rb'){|it|
+            f.write(it.read(4096)) until it.eof?
+          }
+          f.close_write
+        }
         until f.eof?
           t = Time.now.to_f
           STDOUT.write f.read(4096)
