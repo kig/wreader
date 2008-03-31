@@ -184,11 +184,15 @@ module WReader
       tfn = File.join(WReader.thumb_dir, File.basename(filename) + "-#{size}.png")
       if not File.exist?(tfn) or force
         btfn = File.join(WReader.thumb_dir, File.basename(filename) + "-256.png")
-        if File.exist?(btfn)
-          system("thumbnailer", "-s", size.to_s, File.expand_path(btfn), File.expand_path(tfn))
-        else
-          system("ruby", "../pdfthumb.rb", File.expand_path(pdf_filename), File.expand_path(tfn), size.to_s)
+        unless File.exist?(btfn)
+          system("thumbnailer", "-s", "256",
+                 File.expand_path(filename), File.expand_path(btfn))
         end
+        if size <= 256 and File.exist?(btfn)
+          filename = btfn
+        end
+        system("thumbnailer", "-s", size.to_s,
+               File.expand_path(filename), File.expand_path(tfn))
       end
       tfn
     end
