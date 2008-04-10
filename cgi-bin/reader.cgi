@@ -389,6 +389,7 @@ head = cgi.header(
   "type" => "text/html",
   "length" => content.size,
   "status" => "OK",
+  "Connection" => "close",
   "expires" => Time.now + (86400 * 365),
   "Last-modified" => File.mtime(filename).httpdate
 )

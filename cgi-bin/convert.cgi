@@ -85,6 +85,7 @@ when 'image'
       head = cgi.header(
         "type" => type,
         "length" => data.size,
+        "Connection" => "close",
         "status" => "OK",
         "expires" => Time.now + (86400 * 365),
         "Last-modified" => File.mtime(page_fn).httpdate,
