@@ -50,11 +50,13 @@ items = %Q(
       map do |item|
         pages = item.metadata['Doc.PageCount']
         words = item.metadata['Doc.WordCount']
+        min = (words / 250.0).ceil
+        min = "#{min/60}h #{min%60}" if min > 59
         cgi.li { 
           cgi.a("reader.cgi?item=" + item.filename){
             item.metadata['Doc.Title'] || File.basename(item.filename)
           } + 
-          %Q[ (#{pages} pages, #{words} words, ~#{(words / 250.0).ceil}min)]
+          %Q[ (#{pages} pages, #{words} words, ~#{min}min)]
         }
       end
     }
