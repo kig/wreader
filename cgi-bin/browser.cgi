@@ -80,6 +80,10 @@ style = %Q(
       margin-bottom: 2px;
       margin-top: 2px;
       font-size: 0.6em;
+      color: #88A;
+    }
+    a:hover {
+      background: #EED;
     }
   </style>
 )
