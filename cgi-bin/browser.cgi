@@ -48,9 +48,14 @@ items = %Q(
       browser.items.
       sort_by{|item| item.metadata['Doc.Title'] || File.basename(item.filename) }.
       map do |item|
-        cgi.li { cgi.a("reader.cgi?item=" + item.filename){
-          item.metadata['Doc.Title'] || File.basename(item.filename)
-        } }
+        pages = item.metadata['Doc.PageCount']
+        words = item.metadata['Doc.WordCount']
+        cgi.li { 
+          cgi.a("reader.cgi?item=" + item.filename){
+            item.metadata['Doc.Title'] || File.basename(item.filename)
+          } + 
+          %Q[ (#{pages} pages, #{words} words, ~#{(words / 250.0).ceil}min)]
+        }
       end
     }
   </ol>
