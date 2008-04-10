@@ -46,17 +46,23 @@ items = %Q(
   <ol id="items">
     #{
       browser.items.
-      sort_by{|item| item.metadata['Doc.Title'] || File.basename(item.filename) }.
+      sort_by{|item| 
+        title = item.metadata['Doc.Title'] 
+        title = nil if title and title.strip.empty?
+        title ||= File.basename(item.filename) 
+      }.
       map do |item|
+        title = item.metadata['Doc.Title'] 
+        title = nil if title and title.strip.empty?
+        title ||= File.basename(item.filename) 
         pages = item.metadata['Doc.PageCount']
         words = item.metadata['Doc.WordCount']
         min = (words / 250.0).ceil
         min = "#{min/60}h #{min%60}" if min > 59
         cgi.li { 
-          cgi.a("reader.cgi?item=" + item.filename){
-            item.metadata['Doc.Title'] || File.basename(item.filename)
-          } + 
-          %Q[ &mdash; #{pages} pages, #{words} words, ~#{min}min]
+          cgi.a("reader.cgi?item=" + item.filename){ CGI.escapeHTML title } + 
+          %Q[ &mdash; <span class="filename">#{File.basename item.filename}</span> ] +
+          %Q[ &mdash; #{pages} pages, #{words} words, ~#{min}min ]
         }
       end
     }
@@ -84,6 +90,9 @@ style = %Q(
     }
     a:hover {
       background: #EED;
+    }
+    .filename {
+      color: black;
     }
   </style>
 )
