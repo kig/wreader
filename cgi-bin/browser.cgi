@@ -47,7 +47,7 @@ items = %Q(
     #{
       browser.items.map do |item|
         cgi.p { cgi.a("reader.cgi?item=" + item.filename){
-          cgi.img(item.thumbnail) +
+          cgi.img(item.thumbnail(32)) +
           "<br>" +
           item.metadata['Doc.Title'] || File.basename(item.filename)
         } }
@@ -60,9 +60,9 @@ footer = %Q(
 )
 
 style = %Q(
-  <style type="text/stylesheet">
-    img {
-      border : 0px;
+  <style type="text/css">
+    a img {
+      border: 1px solid black;
     }
   </style>
 )
