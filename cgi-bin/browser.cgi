@@ -56,7 +56,7 @@ items = %Q(
           cgi.a("reader.cgi?item=" + item.filename){
             item.metadata['Doc.Title'] || File.basename(item.filename)
           } + 
-          %Q[ (#{pages} pages, #{words} words, ~#{min}min)]
+          %Q[ &mdash; #{pages} pages, #{words} words, ~#{min}min]
         }
       end
     }
