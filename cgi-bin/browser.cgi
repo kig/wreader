@@ -45,13 +45,16 @@ header = %Q(
 items = %Q(
   <ol id="items">
     #{
+      title = nil
       browser.items.
       sort_by{|item| 
         title = item.metadata['Doc.Title'] 
         title = nil if title and title.strip.empty?
-        title ||= File.basename(item.filename) 
+        title ||= File.basename(item.filename)
+        title.downcase
       }.
       map do |item|
+        otitle = title
         title = item.metadata['Doc.Title'] 
         title = nil if title and title.strip.empty?
         title ||= File.basename(item.filename) 
@@ -59,6 +62,13 @@ items = %Q(
         words = item.metadata['Doc.WordCount']
         min = (words / 250.0).ceil
         min = "#{min/60}h #{min%60}" if min > 59
+        if otitle.scan(/\A./u).to_s.downcase != title.scan(/\A./u).to_s.downcase
+          "</ol>" +
+          cgi.h3{ CGI.escapeHTML(title.scan(/\A./u).to_s.upcase) } +
+          "<ol>"
+        else
+          ""
+        end +
         cgi.li { 
           cgi.a("reader.cgi?item=" + item.filename){ CGI.escapeHTML title } + 
           %Q[ &mdash; <span class="filename">#{File.basename item.filename}</span> ] +
@@ -74,6 +84,17 @@ footer = %Q(
 
 style = %Q(
   <style type="text/css">
+    h1 {
+      font-size: 1.2em;
+    }
+    h2 {
+      font-size: 1.0em;
+    }
+    h3 {
+      font-size: 0.8em;
+      color: black;
+      margin: 0px;
+    }
     a {
       text-decoration: none;
     }
@@ -83,8 +104,10 @@ style = %Q(
       vertical-align: middle;
     }
     ol {
-      margin-bottom: 2px;
-      margin-top: 2px;
+      list-style: none;
+      padding-left: 20px;
+      margin-bottom: 0px;
+      margin-top: 0px;
       font-size: 0.6em;
       color: #88A;
     }
