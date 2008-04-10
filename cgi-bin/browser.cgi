@@ -43,17 +43,17 @@ header = %Q(
   <h1>Documents</h1>
 )
 items = %Q(
-  <div id="items">
+  <ol id="items">
     #{
-      browser.items.map do |item|
-        cgi.p { cgi.a("reader.cgi?item=" + item.filename){
-          cgi.img(item.thumbnail(32)) +
-          "<br>" +
+      browser.items.
+      sort_by{|item| item.metadata['Doc.Title'] || File.basename(item.filename) }.
+      map do |item|
+        cgi.li { cgi.a("reader.cgi?item=" + item.filename){
           item.metadata['Doc.Title'] || File.basename(item.filename)
         } }
       end
     }
-  </div>
+  </ol>
 )
 footer = %Q(
   <br><br>
@@ -61,8 +61,18 @@ footer = %Q(
 
 style = %Q(
   <style type="text/css">
+    a {
+      text-decoration: none;
+    }
     a img {
       border: 1px solid black;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    ol {
+      margin-bottom: 2px;
+      margin-top: 2px;
+      font-size: 0.6em;
     }
   </style>
 )
